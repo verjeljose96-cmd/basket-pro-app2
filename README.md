@@ -1,1 +1,2 @@
-# basket-pro-app2
+Basket PRO NBA
+Modelo de simulación Monte Carlo por cuartos
