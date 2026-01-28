@@ -1,129 +1,53 @@
 import streamlit as st
-from scipy.stats import poisson
-import numpy as np
+from ratings import get_team_ratings
+from scipy.stats import norm
 
-SIMS = 10000
+st.set_page_config(page_title="Modelo Baloncesto PRO", layout="centered")
 
-# -------------------------
-# SIMULACIÓN POR CUARTOS
-# -------------------------
-def simular_partido(lambda_a, lambda_b):
-    pesos = [0.24, 0.26, 0.24, 0.26]
-    qa, qb = [], []
-    pa = pb = 0
+st.title("🏀 Modelo NBA PRO – Ratings Reales")
+st.write("Predicción automática con OffRtg, DefRtg y Pace reales")
 
-    for i in range(4):
-        la = lambda_a * pesos[i]
-        lb = lambda_b * pesos[i]
+teams = {
+    "Chicago Bulls": "CHI",
+    "LA Lakers": "LAL",
+    "Boston Celtics": "BOS",
+    "Miami Heat": "MIA",
+    "Golden State Warriors": "GSW",
+    "Denver Nuggets": "DEN"
+}
 
-        # Ajuste clutch / garbage en Q4
-        if i == 3:
-            diff = pa - pb
-            if abs(diff) < 7:
-                la *= 1.08
-                lb *= 1.08
-            elif abs(diff) > 12:
-                la *= 0.90
-                lb *= 0.90
+home = st.selectbox("Equipo LOCAL", list(teams.keys()))
+away = st.selectbox("Equipo VISITANTE", list(teams.keys()))
 
-        p_a = poisson.rvs(la)
-        p_b = poisson.rvs(lb)
+if st.button("Calcular partido"):
+    off_h, def_h, pace_h = get_team_ratings(teams[home])
+    off_a, def_a, pace_a = get_team_ratings(teams[away])
 
-        pa += p_a
-        pb += p_b
+    pace_game = (pace_h + pace_a) / 2
 
-        qa.append(p_a)
-        qb.append(p_b)
+    pts_home = (off_h * def_a * pace_game) / 10000 + 3
+    pts_away = (off_a * def_h * pace_game) / 10000 - 3
 
-    return pa, pb, qa, qb
+    total_points = pts_home + pts_away
+    diff = pts_home - pts_away
 
-# -------------------------
-# UI
-# -------------------------
-st.title("🏀 Basket PRO — Dashboard de Apuestas")
+    st.subheader("📊 Resultados Esperados")
 
-lambda_a = st.number_input("Puntos esperados Equipo A", 80.0, 140.0, 112.0)
-lambda_b = st.number_input("Puntos esperados Equipo B", 80.0, 140.0, 108.0)
-linea_total = st.number_input("Línea total (FT)", 180.0, 260.0, 220.5)
-spread_casa = st.number_input("Spread casa (A)", -20.0, 20.0, -3.5)
-cuota_a = st.number_input("Cuota ganador A", 1.01, 5.0, 1.90)
+    st.write(f"**{home}:** {pts_home:.1f} puntos")
+    st.write(f"**{away}:** {pts_away:.1f} puntos")
+    st.write(f"🔥 **Total esperado:** {total_points:.1f}")
 
-if st.button("Simular escenario completo"):
+    st.subheader("🏆 Probabilidad de ganador")
+    win_prob_home = norm.cdf(diff, 0, 12)
+    win_prob_away = 1 - win_prob_home
 
-    gana_a = 0
-    over_ft = 0
-    spread_win = 0
+    st.write(f"{home}: {win_prob_home*100:.1f}%")
+    st.write(f"{away}: {win_prob_away*100:.1f}%")
 
-    totales = []
-    diffs = []
-    cuartos = [[] for _ in range(4)]
-
-    for _ in range(SIMS):
-        pa, pb, qa, qb = simular_partido(lambda_a, lambda_b)
-
-        totales.append(pa + pb)
-        diffs.append(pa - pb)
-
-        for i in range(4):
-            cuartos[i].append(qa[i] + qb[i])
-
-        if pa > pb:
-            gana_a += 1
-        if pa + pb > linea_total:
-            over_ft += 1
-        if (pa - pb) > abs(spread_casa):
-            spread_win += 1
-
-    # -------------------------
-    # RESULTADOS GENERALES
-    # -------------------------
-    prob_gana = gana_a / SIMS
-    prob_over = over_ft / SIMS
-    prob_spread = spread_win / SIMS
-
-    st.subheader("📊 Full Time")
-
-    st.write(f"Prob. gana A: **{prob_gana:.2%}**")
-    st.write(f"Prob. Over {linea_total}: **{prob_over:.2%}**")
-    st.write(f"Prob. cubrir spread {spread_casa}: **{prob_spread:.2%}**")
-
-    # NO BET por mercado
-    st.subheader("🚦 Decisión por mercado")
-
-    def decision(p, nombre):
-        if p < 0.55:
-            st.error(f"{nombre}: ❌ NO BET")
-        elif p > 0.58:
-            st.success(f"{nombre}: ✅ BET")
-        else:
-            st.warning(f"{nombre}: ⚠️ Zona gris")
-
-    decision(prob_gana, "Ganador")
-    decision(prob_over, "Total FT")
-    decision(prob_spread, "Spread")
-
-    # -------------------------
-    # DESGLOSE ESTADÍSTICO
-    # -------------------------
-    st.subheader("📈 Panorama ampliado")
-
-    st.write(f"Total esperado (media): **{np.mean(totales):.1f}**")
-    st.write(f"Rango 10–90% total: **{np.percentile(totales,10):.0f} – {np.percentile(totales,90):.0f}**")
-
-    st.write(f"Diferencia esperada (A-B): **{np.mean(diffs):.1f}**")
-
-    # -------------------------
-    # MERCADOS POR CUARTO
-    # -------------------------
-    st.subheader("⏱️ Mercados por cuarto")
-
-    for i in range(4):
-        prob_over_q = np.mean(np.array(cuartos[i]) > np.mean(cuartos[i]))
-        media_q = np.mean(cuartos[i])
-
-        st.write(f"Q{i+1} — Total medio: **{media_q:.1f}** | Prob > media: **{prob_over_q:.2%}**")
-
-        if prob_over_q < 0.54:
-            st.write("→ ❌ NO BET")
-        else:
-            st.write("→ ✅ BET interesante")
+    st.subheader("🎯 Recomendación")
+    if abs(diff) < 3:
+        st.success("🤝 NO BET – partido muy parejo")
+    elif diff > 0:
+        st.success(f"✅ Ganador probable: {home}")
+    else:
+        st.success(f"✅ Ganador probable: {away}")
