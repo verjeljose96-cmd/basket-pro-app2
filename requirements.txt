@@ -1,2 +1,5 @@
 streamlit
+requests
+beautifulsoup4
 scipy
+numpy
