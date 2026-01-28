@@ -1,14 +1,9 @@
-============================
+# app.py
 
-app.py
-
-BASKET PRO - MODELO PROFESIONAL
-
-Ganador - Spread - Monte Carlo - Value - NO BET
-
-============================
-
-import streamlit as st import math import random from ratings import get_team_ratings
+import streamlit as st
+import math
+import random
+from ratings import get_team_ratings
 
 ----------------------------
 
