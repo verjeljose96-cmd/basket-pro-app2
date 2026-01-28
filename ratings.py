@@ -1,43 +1,41 @@
-import requests
-from bs4 import BeautifulSoup
+# ratings.py
+# Ratings últimos 10 partidos (L10)
+# (OffRtg, DefRtg, Pace)
 
-# Valores promedio NBA (fallback)
-NBA_AVG = {
-    "off": 114,
-    "def": 114,
-    "pace": 99
+TEAM_RATINGS_L10 = {
+    "ATL": (109.6, 113.8, 99.4),
+    "BOS": (117.3, 110.6, 97.9),
+    "BRK": (110.2, 112.0, 98.8),
+    "CHO": (108.9, 116.7, 99.1),
+    "CHI": (117.5, 115.0, 97.9),
+    "CLE": (114.4, 115.8, 100.9),
+    "DAL": (113.5, 114.7, 100.4),
+    "DEN": (113.3, 115.8, 101.0),
+    "DET": (110.2, 111.6, 99.4),
+    "GSW": (112.0, 114.3, 101.3),
+    "HOU": (110.5, 115.9, 100.2),
+    "IND": (115.7, 118.1, 102.6),
+    "LAC": (111.7, 112.8, 98.3),
+    "LAL": (115.0, 114.0, 100.0),
+    "MEM": (114.4, 115.8, 99.5),
+    "MIA": (112.0, 111.0, 96.8),
+    "MIL": (111.7, 117.9, 96.7),
+    "MIN": (113.2, 109.4, 96.4),
+    "NOP": (112.7, 112.0, 98.7),
+    "NYK": (118.0, 117.0, 97.4),
+    "OKC": (112.3, 111.8, 100.7),
+    "ORL": (112.0, 110.9, 97.1),
+    "PHI": (113.5, 112.4, 98.1),
+    "PHO": (115.0, 114.6, 99.0),
+    "POR": (109.5, 118.4, 99.3),
+    "SAC": (115.0, 114.9, 101.1),
+    "SAS": (108.4, 119.6, 100.5),
+    "TOR": (112.6, 113.8, 98.4),
+    "UTA": (112.2, 116.2, 98.8),
+    "WAS": (109.1, 120.1, 100.9),
 }
 
-def get_team_ratings(team_code, season="2024"):
-    url = f"https://www.basketball-reference.com/teams/{team_code}/{season}.html"
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Accept-Language": "en-US,en;q=0.9"
-    }
+NBA_AVG = (114.0, 114.0, 99.0)
 
-    try:
-        r = requests.get(url, headers=headers, timeout=10)
-        if r.status_code != 200:
-            return NBA_AVG["off"], NBA_AVG["def"], NBA_AVG["pace"]
-
-        soup = BeautifulSoup(r.text, "html.parser")
-        table = soup.find("table", {"id": "team_misc"})
-
-        if table is None:
-            return NBA_AVG["off"], NBA_AVG["def"], NBA_AVG["pace"]
-
-        ratings = {}
-        for row in table.find_all("tr"):
-            th = row.find("th")
-            td = row.find("td")
-            if th and td:
-                ratings[th.text.strip()] = td.text.strip()
-
-        off = float(ratings.get("Off Rtg", NBA_AVG["off"]))
-        deff = float(ratings.get("Def Rtg", NBA_AVG["def"]))
-        pace = float(ratings.get("Pace", NBA_AVG["pace"]))
-
-        return off, deff, pace
-
-    except Exception:
-        return NBA_AVG["off"], NBA_AVG["def"], NBA_AVG["pace"]
+def get_team_ratings(team_code):
+    return TEAM_RATINGS_L10.get(team_code, NBA_AVG)
