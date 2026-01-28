@@ -2,7 +2,7 @@
 
 app.py
 
-BASKET PRO – MODELO PROFESIONAL
+BASKET PRO - MODELO PROFESIONAL
 
 Ganador · Spread · Monte Carlo · Value · NO BET
 
