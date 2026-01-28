@@ -1,6 +1,9 @@
 app.py
 
-import streamlit as st import math import random from ratings import get_team_ratings
+import streamlit as st 
+import math 
+import random 
+from ratings import get_team_ratings
 
 st.set_page_config(page_title="Basket Pro", layout="centered")
 
