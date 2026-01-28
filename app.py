@@ -1,7 +1,6 @@
-# app.py
+    # app.py
 
 import streamlit as st
-import math
 import random
 from ratings import get_team_ratings
 
@@ -51,6 +50,7 @@ odds_home = st.number_input("Cuota local", min_value=1.01, value=1.90)
 odds_away = st.number_input("Cuota visitante", min_value=1.01, value=1.90)
 
 SIMS = 10000
+BASE_POINTS = 112  # promedio NBA por equipo
 
 if st.button("Calcular"):
     if home == away:
@@ -62,11 +62,11 @@ if st.button("Calcular"):
 
     pace = (pace_h + pace_a) / 2
 
-    pts_home = (off_h * def_a) * pace / 100
-    pts_away = (off_a * def_h) * pace / 100
+    pts_home = BASE_POINTS * off_h * def_a * (pace / 100)
+    pts_away = BASE_POINTS * off_a * def_h * (pace / 100)
 
-    diff = pts_home - pts_away
     total_points = pts_home + pts_away
+    diff = pts_home - pts_away
 
     sigma = max(8, min(16, total_points * 0.055))
 
